@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASCII Arts</title>
+    <style>
+            *{
+                padding: 0;
+                margin: 0;
+                box-sizing: border-box;
+            }
+            body{
+                background: black;
+            }
+            .container{
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform:translate(-50%, -50%);
+            }
+            #canvas1{
+                border:5px solid white;
+            }
+            .controls > input{
+                border: 2px solid white;
+                width: 75%;
+            }
+            .controls > label{
+                width: 35%;
+                color: white;
+                font-size: 15px;
+            }
+            .controls{
+                display: flex;
+            }
+            
+    </style>
+</head>
+<body>
+    <div class="container">
+        <canvas id="canvas1"></canvas>
+        <div class="controls">
+            <label for="resolution" id="resolutionLabel">Original Image</label>
+            <input type="range" id="resolution" name="resolution" min="1" max="20" value="1">
+        </div>
+    </div>
+    <script>
+        const canvas = document.getElementById('canvas1');
+            const ctx = canvas.getContext('2d')
+
+            const image1 = new Image();
+            image1.src ='filmar.jpg';
+
+            const inputSlider = document.getElementById('resolution');
+            const inputLabel = document.getElementById('resolutionLabel');
+            inputSlider.addEventListener('change', handlerSlider)
+            class Cell{
+                constructor(x, y, symbol, color){
+                    this.x = x;
+                    this.y = y;
+                    this.symbol = symbol;
+                    this.color = color;
+                }
+                draw(ctx){
+                    ctx.fillStyle = this.color;
+                    ctx.fillText(this.symbol, this.x, this.y);
+                }
+            }
+            class AsciiEffect {
+                #imageCellArray = [];
+                #pixels = [];
+                #ctx = [];
+                #width = [];
+                #height = [];
+                constructor(ctx, width, height){
+                    this.#ctx = ctx;
+                    this.#width = width;
+                    this.#height = height;
+                    this.#ctx.drawImage(image1, 0, 0, this.#width, this.#height);
+                    this.#pixels = this.#ctx.getImageData(0,0, this.#width, this.#height);
+                    console.log(this.#pixels);
+                }
+                #convertToSymbol(g){
+                    if(g > 250 ) return 'X';
+                    else if( g > 240) return 'A';
+                    else if( g > 230) return 'B';
+                    else if( g > 220) return 'C';
+                    else if( g > 210) return 'D';
+                    else if( g > 200) return 'E';
+                    else if( g > 190) return 'F';
+                    else if( g > 180) return 'G';
+                    else if( g > 170) return 'H';
+                    else if( g > 160) return 'I';
+                    else if( g > 150) return 'J';
+                    else if( g > 140) return 'K';
+                    else if( g > 130) return 'L';
+                    else if( g > 120) return 'M';
+                    else if( g > 110) return 'N';
+                    else if( g > 100) return 'O';
+                    else if( g > 90) return 'P';
+                    else if( g > 80) return 'Q';
+                    else if( g > 70) return 'R';
+                    else if( g > 60) return 'S';
+                    else if( g > 50) return 'T';
+                    else if( g > 40) return 'U';
+                    else if( g > 30) return 'V';
+                    else if( g > 20) return 'W';
+                    else return '=';
+                }
+                #scanImage(cellSize){
+                    this.#imageCellArray = [];
+                    for(let y = 0; y < this.#pixels.height; y += cellSize){
+                        for(let x =0; x < this.#pixels.width; x += cellSize){
+                            const posX = x * 4;
+                            const posY = y * 4;
+                            const pos = (posY * this.#pixels.width) + posX;
+
+                            if(this.#pixels.data[pos + 3] > 128){
+                                const red = this.#pixels.data[pos];
+                                const green = this.#pixels.data[pos+1];
+                                const blue = this.#pixels.data[pos+2];
+                                const total = red + green + blue;
+                                const averageColorValue = total/3;
+                                const color = "rgb(" + red + "," + green+ "," + blue + ")";
+                                const symbol = this.#convertToSymbol(averageColorValue);
+                                if(total > 200 )this.#imageCellArray.push(new Cell(x, y, symbol, color));
+                                
+                            }
+                        }
+                    }
+                    console.log(this.#imageCellArray)
+                }
+                #drawAscii(){
+                    this.#ctx.clearRect(0, 0, this.#width, this.#height);
+                    for(let i = 0; i < this.#imageCellArray.length; i++){
+                        this.#imageCellArray[i].draw(this.#ctx);
+                    }
+                }
+                draw(cellSize){
+                    this.#scanImage(cellSize);
+                    this.#drawAscii();
+                }
+            }
+            let effect;
+
+            function handlerSlider(){
+                if(inputSlider.value == 1){
+                    inputLabel.innerHTML = 'Original Image';
+                    ctx.drawImage(image1, 0,0, canvas.width, canvas.height);
+                }
+                else{
+                    inputLabel.innerHTML = "Resolution : "+ inputSlider.value + "px";
+                    ctx.font = parseInt(inputSlider.value) * 1.2 + 'px Verdana';
+                    effect.draw(parseInt(inputSlider.value));
+                }
+            }
+            image1.onload = function initialize(){
+                canvas.width = image1.width;
+                canvas.height = image1.height;
+                effect = new AsciiEffect(ctx, image1.width, image1.height)
+                
+            }
+    </script>
+</body>
+</html>
